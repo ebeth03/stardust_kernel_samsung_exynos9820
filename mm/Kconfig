@@ -875,6 +875,8 @@ config FAULT_AROUND_4KB
 	help
 	  Reduce fault around bytes to 4KB
 
+source "mm/sec_mm/Kconfig"
+
 config VM_MAX_READAHEAD
 	int "Default max readahead window size"
 	default 64
