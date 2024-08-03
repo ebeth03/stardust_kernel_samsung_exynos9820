@@ -393,9 +393,6 @@ LZMA		= lzma
 LZ4		= lz4c
 XZ		= xz
 
-READELF        = $(CROSS_COMPILE)readelf
-export READELF
-
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 NOSTDINC_FLAGS  =
