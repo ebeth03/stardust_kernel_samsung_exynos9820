@@ -296,18 +296,17 @@ toolchain ()
         quotes "$CLANG_INFO Directory Found!"
     else
         quotes "Add $CLANG_INFO as Submodule"
-        git submodule add -f -q https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 toolchain/aarch64-linux-android-4.9 > /dev/null
         git submodule add -f -q https://github.com/ArrowOS-Devices/android_prebuilts_clang_host_linux-x86_clang-r416183b1 toolchain/clang-r416183b1 > /dev/null
         check "clang-$CLANG_VERSION"
     fi
 
-    CLANG=$PWD/toolchain/clang-r416183b1/bin/
-    GCC=$PWD/toolchain/aarch64-linux-android-4.9/bin/aarch64-linux-androidkernel-
+    CLANG=$PWD/toolchain/clang-r416183b1
+    PATH=$CLANG/bin:$CLANG/lib:$PATH
     ARGS="
         ARCH=arm64 O=out \
-        CC=${CLANG}clang \
-        CLANG_TRIPLE=${CLANG}aarch64-linux-gnu- \
-        CROSS_COMPILE=$GCC
+        LLVM=1 LLVM_IAS=1 \
+        CC=clang \
+        READELF=$CLANG/bin/llvm-readelf \
     "
 }
 
