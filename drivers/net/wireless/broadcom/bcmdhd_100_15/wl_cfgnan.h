@@ -628,11 +628,7 @@ typedef struct nan_hal_capabilities {
 	bool is_ndp_security_supported;
 	uint32 max_sdea_service_specific_info_len;
 	uint32 max_subscribe_address;
-#if defined(ANDROID_PLATFORM_VERSION)
-#if (ANDROID_PLATFORM_VERSION > 9)
 	uint32 ndpe_attr_supported;
-#endif /* ANDROID_PLATFORM_VERSION */
-#endif /* ANDROID_PLATFORM_VERSION > 9 */
 } nan_hal_capabilities_t;
 
 typedef struct _nan_hal_resp {

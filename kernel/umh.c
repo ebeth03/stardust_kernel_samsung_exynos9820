@@ -432,7 +432,7 @@ int call_usermodehelper_exec(struct subprocess_info *sub_info, int wait)
 	if (strlen(sub_info->path) == 0)
 		goto out;
 
-#if defined(CONFIG_SECURITY_DEFEX) && ANDROID_VERSION >= 100000 /* Over Q in case of Exynos */
+#if defined(CONFIG_SECURITY_DEFEX)
 	if (task_defex_user_exec(sub_info->path)) {
 		goto out;
 	}

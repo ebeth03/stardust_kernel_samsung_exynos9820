@@ -64,14 +64,10 @@
 
 #include <linuxver.h>
 
-#if defined(ANDROID_PLATFORM_VERSION)
-#if (ANDROID_PLATFORM_VERSION >= 10)
 #define WL_STA_ASSOC_RAND
 #ifndef DHD_RANDOM_MAC_SCAN
 #define WL_USE_RANDOMIZED_SCAN
 #endif /* DHD_RANDOM_MAC_SCAN */
-#endif /* ANDROID_PLATFORM_VERSION >= 10 */
-#endif /* ANDROID_PLATFORM_VERSION */
 
 /* For COB type feature */
 #ifdef CONFIG_WIFI_BROADCOM_COB
