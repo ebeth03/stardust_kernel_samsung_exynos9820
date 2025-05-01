@@ -237,11 +237,7 @@ source "drivers/fingerprint/Kconfig"
 
 #source "drivers/gator/Kconfig"
 
-source "drivers/security/samsung/icdrv/Kconfig"
-
 source "drivers/samsung/Kconfig"
-
-source "drivers/security/samsung/tzic/Kconfig"
 
 source "drivers/spu_verify/Kconfig"
 endmenu
