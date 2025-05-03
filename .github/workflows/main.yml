@@ -1,0 +1,86 @@
+name: Build (Release)
+run-name: 'Release: Build ${{ github.event.inputs.version }} from ${{ github.sha }}'
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Kernel Version'
+        required: true
+        default: 'v'
+      tag:
+        description: 'Release Tag'
+        required: true
+        default: 'v-release'
+      token:
+        description: 'Token (Leave Empty to Use GitHub Token)'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        device: [beyond0lte, beyond1lte, beyond2lte, beyondx, d1, d1xks, d2s, d2x]
+
+    steps:
+      - name: Checkout Tree
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Build Environment
+        run: |
+          sudo apt update && sudo apt upgrade -y && sudo apt install --no-install-recommends -y build-essential gcc-aarch64-linux-gnu
+          
+      - name: Set Environment Variable
+        run: |
+          SHA=$(git rev-parse --short ${{ github.sha }})
+          echo BUILD_DATE=$(date +'%Y%m%d') >> $GITHUB_ENV
+          echo COMMIT_SHA=$SHA >> $GITHUB_ENV
+          echo BUILD_KERNEL_VERSION=${{ github.event.inputs.version }} >> $GITHUB_ENV
+          
+      - name: Building Kernel
+        run: |
+            bash build.sh -m ${{ matrix.device }} -v ${{ env.BUILD_KERNEL_VERSION }} -r y
+
+      - name: Upload Kernel
+        uses: actions/upload-artifact@v4
+        with:
+          name: "StardustKernel-${{ env.BUILD_KERNEL_VERSION }}-${{ env.BUILD_DATE }}-${{ env.BUILD_DEVICE }}-${{ matrix.device }}"
+          path: "build/export/*.zip"
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Release Build Kernel
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.event.inputs.tag }}
+          name: "${{ github.event.inputs.tag }}"
+          draft: true
+          generateReleaseNotes: true
+          makeLatest: true
+          skipIfReleaseExists: true
+          token: ${{ github.event.inputs.token != '' && github.event.inputs.token || github.token }}
+          removeArtifacts: true
+          artifacts: "artifacts/**/*.zip"
+
+      - name: Cleanup Artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: S*

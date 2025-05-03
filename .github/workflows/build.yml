@@ -1,0 +1,50 @@
+name: Build (CI)
+run-name: 'CI: Build ${{ github.event.inputs.version }} from ${{ github.sha }}'
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Kernel Version'
+        required: true
+        default: 'v'
+      devices:
+        description: 'Devices'
+        required: true
+        default: '["beyond0lte", "beyond1lte", "beyond2lte", "beyondx", "d1", "d1xks", "d2s", "d2x"]'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        device: ${{ fromJSON(github.event.inputs.devices) }}
+
+    steps:
+      - name: Checkout Tree
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Build Environment
+        run: |
+          sudo apt update && sudo apt upgrade -y && sudo apt install --no-install-recommends -y build-essential gcc-aarch64-linux-gnu
+          
+      - name: Set Environment Variable
+        run: |
+          SHA=$(git rev-parse --short ${{ github.sha }})
+          echo BUILD_DATE=$(date +'%Y%m%d') >> $GITHUB_ENV
+          echo BUILD_KERNEL_VERSION=CI-${{ github.event.inputs.version }}-$SHA >> $GITHUB_ENV
+          
+      - name: Building Kernel
+        run: |
+            bash build.sh -m ${{ matrix.device }} -v ${{ env.BUILD_KERNEL_VERSION }} -r n
+
+      - name: Upload Kernel
+        uses: actions/upload-artifact@v4
+        with:
+          name: "StardustKernel-${{ env.BUILD_KERNEL_VERSION }}-${{ env.BUILD_DATE }}-${{ env.BUILD_DEVICE }}-${{ matrix.device }}"
+          path: "build/out/${{ matrix.device }}/zip/*"
+          if-no-files-found: error
