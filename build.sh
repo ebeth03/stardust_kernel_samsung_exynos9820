@@ -289,18 +289,18 @@ toolchain ()
 {
     separator
 
-    CLANG_VERSION="r450784"
-    CLANG_INFO="Clang 14.0.3 (Based on $CLANG_VERSION)"
+    CLANG_VERSION="r468909b"
+    CLANG_INFO="Clang 15.0.3 (Based on $CLANG_VERSION)"
 
     if test -d "toolchain/clang-$CLANG_VERSION" && test -d "toolchain/aarch64-linux-android-4.9"; then
         quotes "$CLANG_INFO Directory Found!"
     else
         quotes "Add $CLANG_INFO as Submodule"
-        git submodule add -f -q https://github.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r450784 toolchain/clang-r450784 > /dev/null
+        git submodule add -f -q https://github.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r468909b toolchain/clang-r468909b > /dev/null
         check "clang-$CLANG_VERSION"
     fi
 
-    CLANG=$PWD/toolchain/clang-r450784
+    CLANG=$PWD/toolchain/clang-r468909b
     PATH=$CLANG/bin:$CLANG/lib:$PATH
     ARGS="
         ARCH=arm64 O=out \
