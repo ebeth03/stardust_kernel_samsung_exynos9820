@@ -9,7 +9,7 @@
 - Kernel Based on HVD3 OneUI 4.1 (Binary 7)
 - OneUI 3/4 and Binaries 7, 8 and 9 Support (It may have some issues depending on ROM binary or OneUI version)
 - Implement Ramdisk (No more root loss after reboot)
-- Compile with AOSP Clang 16.0.2 (Based on r475365b)
+- Compile with AOSP Clang 17.0.4 (Based on r498229b)
 - Nuke all Samsung's Security Feature, Logs & Debug in the Kernel
 - KernelSU Next
 - SuSFS
