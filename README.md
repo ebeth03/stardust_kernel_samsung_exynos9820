@@ -55,7 +55,7 @@
 1. Copy command below and paste on your terminal to install all necessary dependencies
 
 ```
-sudo apt update && sudo apt upgrade -y && sudo apt install --no-install-recommends -y build-essential gcc-aarch64-linux-gnu
+sudo apt update && sudo apt upgrade -y && sudo apt install --no-install-recommends -y git make build-essential gcc-aarch64-linux-gnu clang lld llvm && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash && sudo apt install -y git-lfs && git lfs install
 ```
 
 2. Clone this repository
@@ -67,13 +67,19 @@ git clone https://github.com/StardustMod/android_kernel_samsung_exynos9820
 3. Build for your device (To list all build script command run `./build.sh -h`)
 
 ```
-./build.sh -m [device_codename]
+./build.sh -m [device_codename] -l [clang_version - (12-18)]
 ```
+
+> **Example:** Build for Galaxy Note10+ (d2s) with Clang 18
+> 
+> ```
+> ./build.sh -m d2s -l 18
+> ```
 
 4. After build you can find the kernel zip file at the location below
 
 ```
-build/export/StardustKernel-Unofficial-[yyyyMMdd]-[device_model]-[device_codename].zip
+build/export/StardustKernel-Unofficial-[yyyyMMdd]-[device_model]-[device_codename]-[clang_version].zip
 ```
 
 5. Flash using TWRP based recovery

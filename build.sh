@@ -72,6 +72,7 @@ Options:
     -k, --ksu [y/N]        Include KernelSU Next with SuSFS (default: y)
     -h, --help             List all Build Script Command
     -c, --clean [y/N]      Reset all Change to Latest Commit [!! Your Uncommit Change will Lost !!] (default: n)
+    -l, --llvm [value]     Toolchain Clang Version (default: 18)
 EOF
 }
 
@@ -99,6 +100,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --clean|-c)
             CLEAN="$2"
+            shift 2
+            ;;
+        --llvm|-l)
+            LLVM="$2"
             shift 2
             ;;
         *)\
@@ -289,24 +294,67 @@ toolchain ()
 {
     separator
 
-    CLANG_VERSION="r522817"
-    CLANG_INFO="Clang 18.0.1 (Based on $CLANG_VERSION)"
+    if [[ "$LLVM" == "12" ]]; then
+        CLANG=416183b1 # Clang 12.0.7
+    elif [[ "$LLVM" == "13" ]]; then
+        CLANG=433403b # Clang 13.0.3
+    elif [[ "$LLVM" == "14" ]]; then
+        CLANG=450784 # Clang 14.0.3
+    elif [[ "$LLVM" == "15" ]]; then
+        CLANG=468909b # Clang 15.0.3
+    elif [[ "$LLVM" == "16" ]]; then
+        CLANG=475365b # Clang 16.0.2
+    elif [[ "$LLVM" == "17" ]]; then
+        CLANG=498229b # Clang 17.0.4
+    else
+        LLVM=18
+        CLANG=522817 # Clang 18.0.1
+    fi
 
-    if test -d "toolchain/clang-$CLANG_VERSION" && test -d "toolchain/aarch64-linux-android-4.9"; then
+    if [[ "$LLVM" == "12" ]]; then
+        MINOR=".0.5"
+    elif [[ "$LLVM" == "13" ]] || [[ "$LLVM" == "14" ]] || [[ "$LLVM" == "15" ]]; then
+        MINOR=".0.3"
+    elif [[ "$LLVM" == "16" ]]; then
+        MINOR=".0.2"
+    elif [[ "$LLVM" == "17" ]]; then
+        MINOR=".0.4"
+    else
+        MINOR=".0.1"
+    fi
+
+    CLANG_VERSION="r$CLANG"
+    CLANG_INFO="Clang $LLVM$MINOR (Based on $CLANG_VERSION)"
+    TOOLCHAIN_PATH="toolchain/clang-$CLANG_VERSION"
+    KERNELCLANG=Clang$LLVM
+    
+    if test -d "$TOOLCHAIN_PATH"; then
         quotes "$CLANG_INFO Directory Found!"
     else
+        if [[ "$LLVM" == "12" ]]; then
+            HOST=hub # GitHub
+            ROM="ArrowOS-Devices" # ArrowOS
+        else
+            HOST=lab # GitLab
+            ROM=crdroidandroid # crDroid
+        fi
+
+        TOOLCHAIN_URL="https://git$HOST.com/$ROM/android_prebuilts_clang_host_linux-x86_clang-$CLANG_VERSION.git"
+
         quotes "Add $CLANG_INFO as Submodule"
-        git submodule add -f -q https://github.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r522817 toolchain/clang-r522817 > /dev/null
+        git submodule add -f -q "$TOOLCHAIN_URL" "$TOOLCHAIN_PATH" > /dev/null
         check "clang-$CLANG_VERSION"
     fi
 
-    CLANG=$PWD/toolchain/clang-r522817
-    PATH=$CLANG/bin:$CLANG/lib:$PATH
+    ORIG_PATH=$PATH
+    CLANG_DIR="$PWD/$TOOLCHAIN_PATH"
+    PATH="$CLANG_DIR/bin:$CLANG_DIR/lib:$ORIG_PATH"
+
     ARGS="
         ARCH=arm64 O=out \
         LLVM=1 LLVM_IAS=1 \
         CC=clang \
-        READELF=$CLANG/bin/llvm-readelf \
+        READELF=$CLANG_DIR/bin/llvm-readelf \
     "
 }
 
@@ -492,7 +540,7 @@ build_zip ()
     sed -i "s/ui_print(\" Kernel Toolchain: \");/ui_print(\" Kernel Toolchain: $CLANG_INFO\");/" build/out/$MODEL/zip/META-INF/com/google/android/updater-script
 
     if [[ "$LOCAL" == "y" ]] || [[ "$RELEASE" == "y" ]]; then
-        sed -i "s/CONFIG_LOCALVERSION=\"-Stardust-$KERNEL_VERSION-"$DEVICE"-$MODEL\"/CONFIG_LOCALVERSION=\"-StardustKernel-$KERNEL_VERSION-"$DATE"-"$DEVICE"-$MODEL\"/" arch/arm64/configs/$KERNEL_DEFCONFIG
+        sed -i "s/CONFIG_LOCALVERSION=\"-Stardust-$KERNEL_VERSION-"$DEVICE"-$MODEL\"/CONFIG_LOCALVERSION=\"-StardustKernel-$KERNEL_VERSION-"$DATE"-"$DEVICE"-$MODEL-$KERNELCLANG\"/" arch/arm64/configs/$KERNEL_DEFCONFIG
         NAME=$(grep -o 'CONFIG_LOCALVERSION="[^"]*"' arch/arm64/configs/$KERNEL_DEFCONFIG | cut -d '"' -f 2)
         NAME=${NAME:1}.zip
         pushd build/out/$MODEL/zip > /dev/null
