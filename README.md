@@ -9,7 +9,7 @@
 - Kernel Based on HVD3 OneUI 4.1 (Binary 7)
 - OneUI 3/4 and Binaries 7, 8 and 9 Support (It may have some issues depending on ROM binary or OneUI version)
 - Implement Ramdisk (No more root loss after reboot)
-- Compile with AOSP Clang 18.0.1 (Based on r522817)
+- Compile with Neutron Clang 19.0.0 (10032024)
 - Nuke all Samsung's Security Feature, Logs & Debug in the Kernel
 - KernelSU Next
 - SuSFS
@@ -70,10 +70,22 @@ git clone https://github.com/StardustMod/android_kernel_samsung_exynos9820
 ./build.sh -m [device_codename] -l [clang_version - (12-18)]
 ```
 
-> **Example:** Build for Galaxy Note10+ (d2s) with Clang 18
+> **Example:** Build for Galaxy Note10+ (d2s) with Neutron Clang latest version
 > 
 > ```
-> ./build.sh -m d2s -l 18
+> ./build.sh -m d2s -l latest
+> ```
+
+> **Example:** Build for Galaxy S10+ (beyond2lte) with Neutron Clang 19.0.0 (10032024)
+> 
+> ```
+> ./build.sh -m beyond2lte -l 10032024
+> ```
+
+> **Example:** Build for Galaxy Note10 (d1) with Clang 18
+> 
+> ```
+> ./build.sh -m d1 -l 18
 > ```
 
 4. After build you can find the kernel zip file at the location below

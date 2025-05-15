@@ -72,9 +72,11 @@ Options:
     -k, --ksu [y/N]        Include KernelSU Next with SuSFS (default: y)
     -h, --help             List all Build Script Command
     -c, --clean [y/N]      Reset all Change to Latest Commit [!! Your Uncommit Change will Lost !!] (default: n)
-    -l, --llvm [value]     Toolchain Clang Version (default: 18)
+    -l, --llvm [value]     Clang (12-18) or Neutron Clang Version (default: 10032024)
 EOF
 }
+
+USE_NEUTRON=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -103,8 +105,19 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --llvm|-l)
-            LLVM="$2"
-            shift 2
+            USE_NEUTRON=true
+
+            if [[ "$LLVM" -ge 12 ]] && [[ "$LLVM" -le 18 ]]; then
+                USE_NEUTRON=false
+            fi
+
+            if [[ -n "$2" && "$2" != -* ]]; then
+                NEUTRON="$2"
+                shift 2
+            else
+                NEUTRON=10032024
+                shift
+            fi
             ;;
         *)\
             usage
@@ -293,68 +306,101 @@ detect_env ()
 toolchain ()
 {
     separator
-
-    if [[ "$LLVM" == "12" ]]; then
-        CLANG=416183b1 # Clang 12.0.7
-    elif [[ "$LLVM" == "13" ]]; then
-        CLANG=433403b # Clang 13.0.3
-    elif [[ "$LLVM" == "14" ]]; then
-        CLANG=450784 # Clang 14.0.3
-    elif [[ "$LLVM" == "15" ]]; then
-        CLANG=468909b # Clang 15.0.3
-    elif [[ "$LLVM" == "16" ]]; then
-        CLANG=475365b # Clang 16.0.2
-    elif [[ "$LLVM" == "17" ]]; then
-        CLANG=498229b # Clang 17.0.4
+    if [[ "$USE_NEUTRON" == "true" ]]; then
+        NEUTRON_DATE="=$NEUTRON"
+        KERNELCLANG=NeutronClang-$NEUTRON
+        CLANG_INFO="Neutron Clang ($NEUTRON)"
+        TOOLCHAIN_PATH="toolchain/neutron-$NEUTRON"
     else
-        LLVM=18
-        CLANG=522817 # Clang 18.0.1
+        if [[ "$LLVM" == "12" ]]; then
+            CLANG=416183b1 # Clang 12.0.7
+        elif [[ "$LLVM" == "13" ]]; then
+            CLANG=433403b # Clang 13.0.3
+        elif [[ "$LLVM" == "14" ]]; then
+            CLANG=450784 # Clang 14.0.3
+        elif [[ "$LLVM" == "15" ]]; then
+            CLANG=468909b # Clang 15.0.3
+        elif [[ "$LLVM" == "16" ]]; then
+            CLANG=475365b # Clang 16.0.2
+        elif [[ "$LLVM" == "17" ]]; then
+            CLANG=498229b # Clang 17.0.4
+        else
+            LLVM=18
+            CLANG=522817 # Clang 18.0.1
+        fi
+
+        KERNELCLANG=Clang$LLVM
+
+        if [[ "$LLVM" == "12" ]]; then
+            MINOR=".0.5"
+        elif [[ "$LLVM" == "13" ]] || [[ "$LLVM" == "14" ]] || [[ "$LLVM" == "15" ]]; then
+            MINOR=".0.3"
+        elif [[ "$LLVM" == "16" ]]; then
+            MINOR=".0.2"
+        elif [[ "$LLVM" == "17" ]]; then
+            MINOR=".0.4"
+        else
+            MINOR=".0.1"
+        fi
+
+        CLANG_VERSION="r$CLANG"
+        CLANG_INFO="Clang $LLVM$MINOR (Based on $CLANG_VERSION)"
+        TOOLCHAIN_PATH="toolchain/clang-$CLANG_VERSION"
+        CLIB=":$CLANG_DIR/lib"
+        CARGS="
+            CC=clang \
+            READELF=$CLANG_DIR/bin/llvm-readelf \
+        "
     fi
 
-    if [[ "$LLVM" == "12" ]]; then
-        MINOR=".0.5"
-    elif [[ "$LLVM" == "13" ]] || [[ "$LLVM" == "14" ]] || [[ "$LLVM" == "15" ]]; then
-        MINOR=".0.3"
-    elif [[ "$LLVM" == "16" ]]; then
-        MINOR=".0.2"
-    elif [[ "$LLVM" == "17" ]]; then
-        MINOR=".0.4"
-    else
-        MINOR=".0.1"
-    fi
-
-    CLANG_VERSION="r$CLANG"
-    CLANG_INFO="Clang $LLVM$MINOR (Based on $CLANG_VERSION)"
-    TOOLCHAIN_PATH="toolchain/clang-$CLANG_VERSION"
-    KERNELCLANG=Clang$LLVM
-    
     if test -d "$TOOLCHAIN_PATH"; then
         quotes "$CLANG_INFO Directory Found!"
     else
-        if [[ "$LLVM" == "12" ]]; then
-            HOST=hub # GitHub
-            ROM="ArrowOS-Devices" # ArrowOS
+        if [[ "$USE_NEUTRON" == "true" ]]; then
+            rm -rf $TOOLCHAIN_PATH
+            mkdir -p $TOOLCHAIN_PATH
+            quotes "Add $CLANG_INFO"
+            separator
+            cd $TOOLCHAIN_PATH
+            bash <(curl -LSs "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman") -S$NEUTRON_DATE
+            if ! test -f "/usr/bin/file"; then
+                separator
+                quotes "Installing File Package"
+                separator
+                sudo apt install -y file
+            fi
+            separator
+            quotes "Paching glibc"
+            separator
+            bash <(curl -LSs "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman") --patch=glibc
+            cd $OLDPWD
+            separator
+            check "Neutron Clang 18"
         else
-            HOST=lab # GitLab
-            ROM=crdroidandroid # crDroid
+            if [[ "$LLVM" == "12" ]]; then
+                HOST=hub # GitHub
+                ROM="ArrowOS-Devices" # ArrowOS
+            else
+                HOST=lab # GitLab
+                ROM=crdroidandroid # crDroid
+            fi
+
+            TOOLCHAIN_URL="https://git$HOST.com/$ROM/android_prebuilts_clang_host_linux-x86_clang-$CLANG_VERSION.git"
+
+            quotes "Add $CLANG_INFO as Submodule"
+            git submodule add -f -q "$TOOLCHAIN_URL" "$TOOLCHAIN_PATH" > /dev/null
+            check "clang-$CLANG_VERSION"
         fi
-
-        TOOLCHAIN_URL="https://git$HOST.com/$ROM/android_prebuilts_clang_host_linux-x86_clang-$CLANG_VERSION.git"
-
-        quotes "Add $CLANG_INFO as Submodule"
-        git submodule add -f -q "$TOOLCHAIN_URL" "$TOOLCHAIN_PATH" > /dev/null
-        check "clang-$CLANG_VERSION"
     fi
 
     ORIG_PATH=$PATH
     CLANG_DIR="$PWD/$TOOLCHAIN_PATH"
-    PATH="$CLANG_DIR/bin:$CLANG_DIR/lib:$ORIG_PATH"
+    PATH="$CLANG_DIR/bin$CLIB:$ORIG_PATH"
 
     ARGS="
         ARCH=arm64 O=out \
         LLVM=1 LLVM_IAS=1 \
-        CC=clang \
-        READELF=$CLANG_DIR/bin/llvm-readelf \
+        $CARGS
     "
 }
 
@@ -560,10 +606,10 @@ rm -rf ./build.log
 
     separator
     quotes "Preparing Build Environment"
-    pushd $(dirname "$0") > /dev/null
 
     detect_env
     toolchain
+    pushd $(dirname "$0") > /dev/null
 
     if [[ "$LOCAL" == "y" ]]; then
         submodule
