@@ -71,7 +71,7 @@ static int create_encryption_context_from_policy(struct inode *inode,
 		return res;
 	}
 
-#if defined(CONFIG_FSCRYPT_SDP) || defined(CONFIG_DDAR)
+#if defined(CONFIG_FSCRYPT_SDP)
 	ctx.knox_flags = 0;
 #endif
 
@@ -298,16 +298,8 @@ int fscrypt_inherit_context(struct inode *parent, struct inode *child,
 	}
 	BUILD_BUG_ON(sizeof(ctx) != FSCRYPT_SET_CONTEXT_MAX_SIZE);
 
-#if defined(CONFIG_DDAR) || defined(CONFIG_FSCRYPT_SDP)
+#if defined(CONFIG_FSCRYPT_SDP)
 	ctx.knox_flags = 0;
-#endif
-
-#ifdef CONFIG_DDAR
-	res = dd_test_and_inherit_context(&ctx, parent, child, ci, fs_data);
-	if(res) {
-		dd_error("failed to inherit dd policy\n");
-		return res;
-	}
 #endif
 
 #ifdef CONFIG_FSCRYPT_SDP

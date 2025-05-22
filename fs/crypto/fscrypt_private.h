@@ -16,7 +16,7 @@
 #include <linux/fscrypt.h>
 #include <crypto/hash.h>
 
-#if defined(CONFIG_FSCRYPT_SDP) || defined(CONFIG_DDAR)
+#if defined(CONFIG_FSCRYPT_SDP)
 #include "fscrypt_knox_private.h"
 #endif
 
@@ -47,7 +47,7 @@ struct fscrypt_context {
 	u8 flags;
 	u8 master_key_descriptor[FS_KEY_DESCRIPTOR_SIZE];
 	u8 nonce[FS_KEY_DERIVATION_NONCE_SIZE];
-#if defined(CONFIG_FSCRYPT_SDP) || defined(CONFIG_DDAR)
+#if defined(CONFIG_FSCRYPT_SDP)
 	u32 knox_flags;
 #endif
 } __packed;
@@ -81,9 +81,6 @@ struct fscrypt_info {
 	u8 ci_iv_key[FS_CRYPTO_BLOCK_SIZE];
 #endif
 
-#ifdef CONFIG_DDAR
-	struct dd_info *ci_dd_info;
-#endif
 #ifdef CONFIG_FSCRYPT_SDP
 	struct sdp_info *ci_sdp_info;
 #endif

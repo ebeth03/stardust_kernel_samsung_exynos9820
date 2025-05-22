@@ -80,16 +80,3 @@ int fscrypt_sdp_set_context_nolock(struct inode *inode, void *ctx, size_t len, v
 	return __fscrypt_sdp_set_context(inode, ctx, len, false, fs_data);
 }
 
-static int __fscrypt_knox_set_context(struct inode *inode, void *ctx, size_t len)
-{
-	if (inode->i_sb->s_cop->set_knox_context) {
-		return inode->i_sb->s_cop->set_knox_context(inode, NULL, ctx, len, NULL);
-	} else {
-		return -EOPNOTSUPP;
-	}
-}
-
-int fscrypt_knox_set_context(struct inode *inode, void *ctx, size_t len)
-{
-	return __fscrypt_knox_set_context(inode, ctx, len);
-}

@@ -183,7 +183,6 @@ int fscrypt_sdp_set_sdp_policy(struct inode *inode, int engine_id)
 	ctx.knox_flags |= SDP_IS_DIRECTORY;
 
 	// res = inode->i_sb->s_cop->set_context(inode, &ctx, sizeof(ctx), NULL);
-	res = fscrypt_knox_set_context(inode, &ctx, sizeof(ctx));
 	if (res) {
 		DEK_LOGE("set_policy: failed to set fscrypt ctx (err:%d)\n", res);
 		goto unlock_finsh;
@@ -275,7 +274,6 @@ int fscrypt_sdp_set_sensitive(struct inode *inode, int engine_id, struct fscrypt
 		}
 		inode_lock(inode);
 		// rc = inode->i_sb->s_cop->set_context(inode, &ctx, sizeof(ctx), NULL);
-		rc = fscrypt_knox_set_context(inode, &ctx, sizeof(ctx));
 		inode_unlock(inode);
 	}
 
@@ -383,7 +381,6 @@ int fscrypt_sdp_set_protected(struct inode *inode, int engine_id)
 
 	inode_lock(inode);
 	// rc = inode->i_sb->s_cop->set_context(inode, &ctx, sizeof(ctx), NULL);
-	rc = fscrypt_knox_set_context(inode, &ctx, sizeof(ctx));
 	inode_unlock(inode);
 	if (rc) {
 		DEK_LOGE("set_protected: failed to set fscrypt ctx (err:%d)\n", rc);
@@ -459,7 +456,6 @@ int fscrypt_sdp_initialize(struct inode *inode, int engine_id, struct fscrypt_ke
 		ctx.knox_flags &= ~SDP_DEK_IS_UNINITIALIZED;
 		inode_lock(inode);
 		// res = inode->i_sb->s_cop->set_context(inode, &ctx, sizeof(ctx), NULL);
-		res = fscrypt_knox_set_context(inode, &ctx, sizeof(ctx));
 		inode_unlock(inode);
 		if (res) {
 			DEK_LOGE("sdp_initialize: failed to set fscrypt ctx (err:%d)\n", res);
@@ -526,7 +522,6 @@ int fscrypt_sdp_add_chamber_directory(int engine_id, struct inode *inode)
 	ctx.knox_flags = ci->ci_sdp_info->sdp_flags | FSCRYPT_SDP_PARSE_FLAG_OUT_OF_SDP(ctx.knox_flags);
 	inode_lock(inode);
 	// rc = inode->i_sb->s_cop->set_context(inode, &ctx, sizeof(ctx), NULL);
-	rc = fscrypt_knox_set_context(inode, &ctx, sizeof(ctx));
 	inode_unlock(inode);
 	if (rc) {
 		DEK_LOGE("%s: Failed to set ext4 context for sdp (err:%d)\n", __func__, rc);
@@ -569,7 +564,6 @@ int fscrypt_sdp_remove_chamber_directory(struct inode *inode)
 	ctx.knox_flags = FSCRYPT_SDP_PARSE_FLAG_OUT_OF_SDP(ctx.knox_flags);
 	inode_lock(inode);
 	// rc = inode->i_sb->s_cop->set_context(inode, &ctx, sizeof(ctx), NULL);
-	rc = fscrypt_knox_set_context(inode, &ctx, sizeof(ctx));
 	inode_unlock(inode);
 	if (rc) {
 		DEK_LOGE("%s: Failed to set ext4 context for sdp (err:%d)\n", __func__, rc);
@@ -981,7 +975,6 @@ inline int __fscrypt_sdp_finish_set_sensitive(struct inode *inode,
 		memzero_explicit(ctx->nonce, FS_KEY_DERIVATION_NONCE_SIZE);
 		inode_lock(inode);
 //		res = inode->i_sb->s_cop->set_context(inode, ctx, sizeof(*ctx), NULL);
-		res = fscrypt_knox_set_context(inode, ctx, sizeof(*ctx));
 		inode_unlock(inode);
 		if (res) {
 			DEK_LOGE("set_sensitive: failed to set fscrypt context(err:%d)\n", res);

@@ -20,11 +20,7 @@
 
 #ifdef CONFIG_FSCRYPT_SDP
 #include <sdp/dek_common.h>
-#ifndef CONFIG_DDAR
-#define FSCRYPT_KNOX_FLG_SDP_MASK       0xFFFF0000
-#else
 #include "../fscrypt_knox_private.h"
-#endif
 
 #include <linux/fscrypto_sdp_cache.h>
 #include <linux/fscrypto_sdp_ioctl.h>

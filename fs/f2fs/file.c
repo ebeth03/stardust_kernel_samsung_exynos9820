@@ -3066,12 +3066,6 @@ long f2fs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	case FS_IOC_DUMP_FILE_KEY:
 		return fscrypt_sdp_ioctl(filp, cmd, arg);
 #endif
-#ifdef CONFIG_DDAR
-	case F2FS_IOC_GET_DD_POLICY:
-	case F2FS_IOC_SET_DD_POLICY:
-	case FS_IOC_GET_DD_INODE_COUNT:
-		return fscrypt_dd_ioctl(cmd, &arg, file_inode(filp));
-#endif
 	default:
 		return -ENOTTY;
 	}
@@ -3188,11 +3182,6 @@ long f2fs_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	case FS_IOC_ADD_CHAMBER:
 	case FS_IOC_REMOVE_CHAMBER:
 	case FS_IOC_DUMP_FILE_KEY:
-#endif
-#ifdef CONFIG_DDAR
-	case F2FS_IOC_GET_DD_POLICY:
-	case F2FS_IOC_SET_DD_POLICY:
-	case FS_IOC_GET_DD_INODE_COUNT:
 #endif
 		break;
 	default:

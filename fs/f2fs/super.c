@@ -2440,20 +2440,6 @@ static int f2fs_set_context(struct inode *inode, const void *ctx, size_t len,
 				ctx, len, fs_data, XATTR_CREATE);
 }
 
-#if defined(CONFIG_DDAR) || defined(CONFIG_FSCRYPT_SDP)
-static int f2fs_get_knox_context(struct inode *inode, const char *name, void *val, size_t len)
-{
-	return f2fs_getxattr(inode, F2FS_XATTR_INDEX_ENCRYPTION,
-			name, val, len, NULL);
-}
-
-static int f2fs_set_knox_context(struct inode *inode, const char *name, const void *val, size_t len, void *fs_data)
-{
-	return f2fs_setxattr(inode, F2FS_XATTR_INDEX_ENCRYPTION,
-			name ? name : F2FS_XATTR_NAME_ENCRYPTION_CONTEXT, val, len, fs_data, 0);
-}
-#endif
-
 static bool f2fs_dummy_context(struct inode *inode)
 {
 	return DUMMY_ENCRYPTION_ENABLED(F2FS_I_SB(inode));
@@ -2463,10 +2449,6 @@ static const struct fscrypt_operations f2fs_cryptops = {
 	.key_prefix	= "f2fs:",
 	.get_context	= f2fs_get_context,
 	.set_context	= f2fs_set_context,
-#if defined(CONFIG_DDAR) || defined(CONFIG_FSCRYPT_SDP)
-	.get_knox_context = f2fs_get_knox_context,
-	.set_knox_context = f2fs_set_knox_context,
-#endif
 #ifdef CONFIG_FS_INLINE_ENCRYPTION
 	.get_dun	= __fscrypt_make_dun,
 #endif

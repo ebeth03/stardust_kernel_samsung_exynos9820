@@ -364,9 +364,6 @@ static void put_crypt_info(struct fscrypt_info *ci)
 	if (!ci)
 		return;
 
-#ifdef CONFIG_DDAR
-	dd_info_try_free(ci->ci_dd_info);
-#endif
 #ifdef CONFIG_FSCRYPT_SDP
 	fscrypt_sdp_put_sdp_info(ci->ci_sdp_info);
 #endif
@@ -457,12 +454,6 @@ int fscrypt_get_encryption_info(struct inode *inode)
 	sdp_fs_command_t *cmd = NULL;
 #endif
 	if (inode->i_crypt_info) {
-#ifdef CONFIG_DDAR
-		if (fscrypt_dd_encrypted_inode(inode) && fscrypt_dd_is_locked()) {
-			dd_error("Failed to open a DDAR-protected file in lock state (ino:%ld)\n", inode->i_ino);
-			return -ENOKEY;
-		}
-#endif
 		return 0;
 	}
 
@@ -507,10 +498,6 @@ int fscrypt_get_encryption_info(struct inode *inode)
 				sizeof(crypt_info->ci_master_key));
 #ifdef CONFIG_FSCRYPT_SDP
 	crypt_info->ci_sdp_info = NULL;
-#endif
-
-#ifdef CONFIG_DDAR
-	crypt_info->ci_dd_info = NULL;
 #endif
 
 	mode = select_encryption_mode(crypt_info, inode);
@@ -618,31 +605,11 @@ sdp_dek:
 attach_ci:
 #endif
 
-#ifdef CONFIG_DDAR
-	if (fscrypt_dd_flg_enabled(ctx.knox_flags)) {
-		struct dd_info *di = alloc_dd_info(inode);
-		if (IS_ERR(di)) {
-			dd_error("%s - failed to alloc dd_info(%d)\n", __func__, __LINE__);
-			res = PTR_ERR(di);
-
-			goto out;
-		}
-
-		crypt_info->ci_dd_info = di;
-	}
-#endif
 	if (cmpxchg(&inode->i_crypt_info, NULL, crypt_info) == NULL)
 		crypt_info = NULL;
 #ifdef CONFIG_FSCRYPT_SDP
 	if (crypt_info == NULL) //Call only when i_crypt_info is loaded initially
 		fscrypt_sdp_finalize_tasks(inode, raw_key, mode->keysize);
-#endif
-#ifdef CONFIG_DDAR
-	if (crypt_info == NULL) {
-		if (inode->i_crypt_info && inode->i_crypt_info->ci_dd_info) {
-			fscrypt_dd_inc_count();
-		}
-	}
 #endif
 out:
 	if (res == -ENOKEY)
@@ -655,11 +622,6 @@ EXPORT_SYMBOL(fscrypt_get_encryption_info);
 
 void fscrypt_put_encryption_info(struct inode *inode)
 {
-#ifdef CONFIG_DDAR
-	if (inode->i_crypt_info && inode->i_crypt_info->ci_dd_info) {
-		fscrypt_dd_dec_count();
-	}
-#endif
 
 #ifdef CONFIG_FSCRYPT_SDP
 	fscrypt_sdp_cache_remove_inode_num(inode);
