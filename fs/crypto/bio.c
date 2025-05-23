@@ -153,9 +153,6 @@ int fscrypt_zeroout_range(const struct inode *inode, pgoff_t lblk,
 		}
 		if (fscrypt_inline_encrypted(inode)) {
 			fscrypt_set_bio_cryptd(inode, bio);
-#if defined(CONFIG_CRYPTO_DISKCIPHER_DEBUG)
-			crypto_diskcipher_debug(FS_ZEROPAGE, bio->bi_opf);
-#endif
 		}
 		err = submit_bio_wait(bio);
 		if (err == 0 && bio->bi_status)

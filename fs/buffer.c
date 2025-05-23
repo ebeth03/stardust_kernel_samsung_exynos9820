@@ -46,9 +46,6 @@
 #include <linux/bit_spinlock.h>
 #include <linux/pagevec.h>
 #include <trace/events/block.h>
-#if defined(CONFIG_CRYPTO_DISKCIPHER_DEBUG)
-#include <crypto/diskcipher.h>
-#endif
 #define __FS_HAS_ENCRYPTION IS_ENABLED(CONFIG_FS_ENCRYPTION)
 #include <linux/fscrypt.h>
 
@@ -3202,9 +3199,6 @@ static int submit_bh_wbc(int op, int op_flags, struct buffer_head *bh,
 	bio_set_op_attrs(bio, op, op_flags);
 
 #ifdef CONFIG_FS_INLINE_ENCRYPTION
-#if defined(CONFIG_CRYPTO_DISKCIPHER_DEBUG)
-	crypto_diskcipher_debug(BLK_BH, op_flags);
-#endif
 	if (bio->bi_opf & REQ_CRYPT)
 		bio->bi_cryptd = bh->b_private;
 #endif

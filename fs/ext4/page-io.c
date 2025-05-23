@@ -355,9 +355,6 @@ void ext4_io_submit(struct ext4_io_submit *io)
 		bio_set_op_attrs(io->io_bio, REQ_OP_WRITE, io_op_flags);
 		if (fscrypt_inline_encrypted(io->io_end->inode)) {
 			fscrypt_set_bio_cryptd(io->io_end->inode, io->io_bio);
-#if defined(CONFIG_CRYPTO_DISKCIPHER_DEBUG)
-			crypto_diskcipher_debug(FS_PAGEIO, io->io_bio->bi_opf);
-#endif
 		}
 		submit_bio(io->io_bio);
 	}

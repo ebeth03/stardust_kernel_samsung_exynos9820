@@ -1625,13 +1625,6 @@ config CRYPTO_DISKCIPHER_DUN
 	help
 	 support Diskcipher use dun(device unit number)
 
-config CRYPTO_DISKCIPHER_DEBUG
-	bool "Diskcipher debug support"
-	default n
-	depends on CRYPTO_DISKCIPHER
-	help
-	 support Diskcipher debug
-
 comment "Compression"
 
 config CRYPTO_DEFLATE

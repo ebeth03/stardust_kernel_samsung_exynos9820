@@ -259,11 +259,6 @@ struct page *fscrypt_encrypt_page(const struct inode *inode,
 	struct page *ciphertext_page = page;
 	int err;
 
-#if defined(CONFIG_CRYPTO_DISKCIPHER_DEBUG)
-	if (__fscrypt_inline_encrypted(inode))
-		crypto_diskcipher_debug(FS_ENC_WARN, 0);
-#endif
-
 	BUG_ON(len % FS_CRYPTO_BLOCK_SIZE != 0);
 
 	if (inode->i_sb->s_cop->flags & FS_CFLG_OWN_PAGES) {
@@ -325,10 +320,6 @@ EXPORT_SYMBOL(fscrypt_encrypt_page);
 int fscrypt_decrypt_page(const struct inode *inode, struct page *page,
 			unsigned int len, unsigned int offs, u64 lblk_num)
 {
-#if defined(CONFIG_CRYPTO_DISKCIPHER_DEBUG)
-	if (__fscrypt_inline_encrypted(inode))
-		crypto_diskcipher_debug(FS_DEC_WARN, 0);
-#endif
 	if (!(inode->i_sb->s_cop->flags & FS_CFLG_OWN_PAGES))
 		BUG_ON(!PageLocked(page));
 

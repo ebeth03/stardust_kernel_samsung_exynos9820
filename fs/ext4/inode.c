@@ -1227,16 +1227,10 @@ static int ext4_block_write_begin(struct page *page, loff_t pos, unsigned len,
 			if (fscrypt_submit_bh(REQ_OP_READ, 0, bh, inode) < 0)
 				ll_rw_block(REQ_OP_READ, 0, 1, &bh);
 
-
-#if defined(CONFIG_CRYPTO_DISKCIPHER_DEBUG)
-			crypto_diskcipher_debug(FS_BLOCK_WRITE,
-				fscrypt_inline_encrypted(inode) ? REQ_CRYPT : 0);
-#endif
 			*wait_bh++ = bh;
 			decrypt = ext4_encrypted_inode(inode) &&
 				S_ISREG(inode->i_mode) &&
 				!fscrypt_inline_encrypted(inode);
-
 		}
 	}
 	/*

@@ -243,11 +243,7 @@ enum diskcipher_dbg {
 	DISKC_USER_MAX
 };
 
-#ifdef CONFIG_CRYPTO_DISKCIPHER_DEBUG
-void crypto_diskcipher_debug(enum diskcipher_dbg dbg, int idx);
-#else
 #define crypto_diskcipher_debug(a, b) ((void)0)
-#endif
 #else
 #define crypto_alloc_diskcipher(a, b, c, d) ((void *)-EINVAL)
 #define crypto_free_diskcipher(a) ((void)0)
