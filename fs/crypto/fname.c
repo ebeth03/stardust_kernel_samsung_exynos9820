@@ -18,11 +18,7 @@
 
 static inline void init_iv(struct inode *inode, char *iv, int iv_size)
 {
-#ifdef CONFIG_FS_CRYPTO_SEC_EXTENSION
-	memcpy(iv, inode->i_crypt_info->ci_iv_key, iv_size);
-#else
 	memset(iv, 0, iv_size);
-#endif
 }
 
 static inline bool fscrypt_is_dot_dotdot(const struct qstr *str)

@@ -19,66 +19,8 @@
 #ifdef CONFIG_FS_INLINE_ENCRYPTION
 #include <linux/blk-crypt.h>
 #endif
-#ifdef CONFIG_FS_CRYPTO_SEC_EXTENSION
-#include "crypto_sec.h"
-
-static int derive_key_aes(const u8 *, const struct fscrypt_context *, u8 *,
-		unsigned int) __attribute__((unused));
-static int find_and_derive_key(const struct inode *inode,
-		const struct fscrypt_context *ctx, u8 *derived_key,
-		unsigned int derived_keysize) __attribute__((unused));
-static int find_and_derive_key_iv(const struct inode *inode,
-		const struct fscrypt_context *ctx,
-		u8 *derived_key, unsigned int derived_keysize, u8 *iv_key)  __attribute__((unused));
-#endif
 
 static struct crypto_shash *essiv_hash_tfm;
-
-/*
- * Key derivation function.  This generates the derived key by encrypting the
- * master key with AES-128-ECB using the inode's nonce as the AES key.
- *
- * The master key must be at least as long as the derived key.  If the master
- * key is longer, then only the first 'derived_keysize' bytes are used.
- */
-static int derive_key_aes(const u8 *master_key,
-			  const struct fscrypt_context *ctx,
-			  u8 *derived_key, unsigned int derived_keysize)
-{
-	int res = 0;
-	struct skcipher_request *req = NULL;
-	DECLARE_CRYPTO_WAIT(wait);
-	struct scatterlist src_sg, dst_sg;
-	struct crypto_skcipher *tfm = crypto_alloc_skcipher("ecb(aes)", 0, 0);
-
-	if (IS_ERR(tfm)) {
-		res = PTR_ERR(tfm);
-		tfm = NULL;
-		goto out;
-	}
-	crypto_skcipher_set_flags(tfm, CRYPTO_TFM_REQ_WEAK_KEY);
-	req = skcipher_request_alloc(tfm, GFP_NOFS);
-	if (!req) {
-		res = -ENOMEM;
-		goto out;
-	}
-	skcipher_request_set_callback(req,
-			CRYPTO_TFM_REQ_MAY_BACKLOG | CRYPTO_TFM_REQ_MAY_SLEEP,
-			crypto_req_done, &wait);
-	res = crypto_skcipher_setkey(tfm, ctx->nonce, sizeof(ctx->nonce));
-	if (res < 0)
-		goto out;
-
-	sg_init_one(&src_sg, master_key, derived_keysize);
-	sg_init_one(&dst_sg, derived_key, derived_keysize);
-	skcipher_request_set_crypt(req, &src_sg, &dst_sg, derived_keysize,
-				   NULL);
-	res = crypto_wait_req(crypto_skcipher_encrypt(req), &wait);
-out:
-	skcipher_request_free(req);
-	crypto_free_skcipher(tfm);
-	return res;
-}
 
 /*
  * Search the current task's subscribed keyrings for a "logon" key with
@@ -136,72 +78,6 @@ invalid:
 	up_read(&key->sem);
 	key_put(key);
 	return ERR_PTR(-ENOKEY);
-}
-
-/* Find the master key, then derive the inode's actual encryption key */
-static int find_and_derive_key(const struct inode *inode,
-					const struct fscrypt_context *ctx,
-					u8 *derived_key, unsigned int derived_keysize)
-{
-	struct key *key;
-	const struct fscrypt_key *payload;
-	int err;
-
-	key = find_and_lock_process_key(FS_KEY_DESC_PREFIX,
-					ctx->master_key_descriptor,
-					derived_keysize, &payload);
-	if (key == ERR_PTR(-ENOKEY) && inode->i_sb->s_cop->key_prefix) {
-		key = find_and_lock_process_key(inode->i_sb->s_cop->key_prefix,
-						ctx->master_key_descriptor,
-						derived_keysize, &payload);
-	}
-	if (IS_ERR(key))
-		return PTR_ERR(key);
-	err = derive_key_aes(payload->raw, ctx, derived_key, derived_keysize);
-	up_read(&key->sem);
-	key_put(key);
-	return err;
-}
-
-static int find_and_derive_key_iv(const struct inode *inode,
-					const struct fscrypt_context *ctx,
-					u8 *derived_key, unsigned int derived_keysize, u8 *iv_key)
-{
-	struct key *key;
-	const struct fscrypt_key *payload;
-	int err;
-
-	key = find_and_lock_process_key(FS_KEY_DESC_PREFIX,
-					ctx->master_key_descriptor,
-					derived_keysize, &payload);
-	if (key == ERR_PTR(-ENOKEY) && inode->i_sb->s_cop->key_prefix) {
-		key = find_and_lock_process_key(inode->i_sb->s_cop->key_prefix,
-						ctx->master_key_descriptor,
-						derived_keysize, &payload);
-	}
-	if (IS_ERR(key))
-		return PTR_ERR(key);
-	err = fscrypt_sec_get_key_aes(payload->raw, ctx, derived_key, derived_keysize, iv_key);
-	up_read(&key->sem);
-	key_put(key);
-	return err;
-}
-
-static inline int __find_and_derive_key(const struct inode *inode,
-					const struct fscrypt_context *ctx,
-					u8 *derived_key, unsigned int derived_keysize,
-					struct fscrypt_info *ci)
-{
-#ifdef CONFIG_CRYPTO_KBKDF_CTR_HMAC_SHA512
-	u8 *iv_key = NULL;
-
-	if (!S_ISREG(inode->i_mode))
-		iv_key = ci->ci_iv_key;
-
-	return find_and_derive_key_iv(inode, ctx, derived_key, derived_keysize, iv_key);
-#else
-	return find_and_derive_key(inode, ctx, derived_key, derived_keysize);
-#endif
 }
 
 #ifdef CONFIG_FS_INLINE_ENCRYPTION
@@ -498,10 +374,6 @@ int fscrypt_get_encryption_info(struct inode *inode)
 	res = -ENOMEM;
 	raw_key = kmalloc(mode->keysize, GFP_NOFS);
 	if (!raw_key)
-		goto out;
-
-	res = __find_and_derive_key(inode, &ctx, raw_key, mode->keysize, crypt_info);
-	if (res)
 		goto out;
 
 #ifdef CONFIG_FS_INLINE_ENCRYPTION

@@ -29,12 +29,10 @@
 #include <crypto/aes.h>
 #include <crypto/skcipher.h>
 #include "fscrypt_private.h"
-#ifdef CONFIG_FS_CRYPTO_SEC_EXTENSION
-#include "crypto_sec.h"
-#else
+
 static inline int __init fscrypt_sec_crypto_init(void) { return 0; }
 static inline void __exit fscrypt_sec_crypto_exit(void) {}
-#endif
+
 static unsigned int num_prealloc_crypto_pages = 32;
 static unsigned int num_prealloc_crypto_ctxs = 128;
 

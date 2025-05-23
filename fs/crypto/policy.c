@@ -13,9 +13,6 @@
 #include <linux/string.h>
 #include <linux/mount.h>
 #include "fscrypt_private.h"
-#ifdef CONFIG_FS_CRYPTO_SEC_EXTENSION
-#include "crypto_sec.h"
-#endif
 
 /*
  * check whether an encryption policy is consistent with an encryption context
@@ -35,12 +32,8 @@ static bool is_encryption_context_consistent_with_policy(
 
 static inline int set_nonce(char *nonce)
 {
-#ifdef CONFIG_FS_CRYPTO_SEC_EXTENSION
-	return fscrypt_sec_set_key_aes(nonce);
-#else
 	get_random_bytes(nonce, FS_KEY_DERIVATION_NONCE_SIZE);
 	return 0;
-#endif /* CONFIG FS_CRYPTO_SEC_EXTENSION */
 }
 
 static int create_encryption_context_from_policy(struct inode *inode,
