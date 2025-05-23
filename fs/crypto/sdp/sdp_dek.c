@@ -89,47 +89,6 @@ void dump_file_key_hex(const char* tag, uint8_t *data, size_t data_len)
 	kfree(buf);
 }
 
-#ifdef CONFIG_SDP_KEY_DUMP
-int fscrypt_sdp_dump_file_key(struct inode *inode)
-{
-	struct fscrypt_info *ci = inode->i_crypt_info;
-	struct fscrypt_key file_system_key;
-	struct fscrypt_key file_encryption_key;
-	int res;
-
-	inode_lock(inode);
-
-	DEK_LOGE("dump file key for ino (%ld)\n", inode->i_ino);
-
-	memset(&file_system_key, 0, sizeof(file_system_key));
-	res = fscrypt_get_encryption_kek(inode, inode->i_crypt_info, &file_system_key);
-	if (res) {
-		DEK_LOGE("failed to retrieve file system key, rc:%d\n", res);
-		goto out;
-	}
-	dump_file_key_hex("FILE SYSTEM KEY", file_system_key.raw, file_system_key.size);
-	memzero_explicit(file_system_key.raw, file_system_key.size);
-
-	memset(&file_encryption_key, 0, sizeof(file_encryption_key));
-	if (!ci->ci_sdp_info) {
-		DEK_LOGE("ci_sdp_info is null\n");
-		res = fscrypt_get_encryption_key(inode, &file_encryption_key);
-	} else {
-		res = fscrypt_get_encryption_key_classified(inode, &file_encryption_key);
-	}
-	if (res) {
-		DEK_LOGE("failed to retrieve file encryption key, rc:%d\n", res);
-		goto out;
-	}
-	dump_file_key_hex("FILE ENCRYPTION KEY", file_encryption_key.raw, file_encryption_key.size);
-	memzero_explicit(file_encryption_key.raw, file_encryption_key.size);
-
-out:
-	inode_unlock(inode);
-	return res;
-}
-#endif
-
 int fscrypt_sdp_set_sdp_policy(struct inode *inode, int engine_id)
 {
 	struct fscrypt_info *ci = inode->i_crypt_info;

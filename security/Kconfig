@@ -272,10 +272,5 @@ config DEFAULT_SECURITY
 	default "apparmor" if DEFAULT_SECURITY_APPARMOR
 	default "" if DEFAULT_SECURITY_DAC
 
-config SDP_KEY_DUMP
-    bool "SDP KEY DUMP"
-    default n
-
-
 endmenu
 

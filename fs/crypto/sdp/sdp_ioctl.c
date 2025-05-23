@@ -92,16 +92,8 @@ int fscrypt_sdp_ioctl_set_sensitive(struct inode *inode, unsigned long arg)
 			return 0;
 		}
 		if (S_ISDIR(inode->i_mode) && !is_root()) {
-#ifdef CONFIG_SDP_KEY_DUMP
-			if (get_sdp_sysfs_key_dump()) {
-				DEK_LOGD("Temporarily allowed to process not vold.");
-			} else {
-#endif
 			DEK_LOGE("Only vold as root process can set sensitive directory\n");
 			return -EPERM;
-#ifdef CONFIG_SDP_KEY_DUMP
-			}
-#endif
 		}
 
 		memset(&req, 0, sizeof(dek_arg_set_sensitive_t));
@@ -136,16 +128,8 @@ int fscrypt_sdp_ioctl_set_protected(struct inode *inode, unsigned long arg)
 		int rc;
 
 		if (S_ISDIR(inode->i_mode) && !is_root()) {
-#ifdef CONFIG_SDP_KEY_DUMP
-			if (get_sdp_sysfs_key_dump()) {
-				DEK_LOGD("Temporarily allowed to process not vold.");
-			} else {
-#endif
 			DEK_LOGE("Only vold as root process can set protected directory\n");
 			return -EPERM;
-#ifdef CONFIG_SDP_KEY_DUMP
-			}
-#endif
 		}
 
 		memset(&req, 0, sizeof(dek_arg_set_protected_t));
@@ -241,25 +225,7 @@ int fscrypt_sdp_ioctl_remove_chamber_directory(struct inode *inode)
 
 int fscrypt_sdp_ioctl_dump_file_key(struct inode *inode)
 {
-#ifdef CONFIG_SDP_KEY_DUMP
-	int rc = 0;
-
-	DEK_LOGE("%s(ino:%ld)\n", __func__, inode->i_ino);
-	if (inode->i_crypt_info == NULL) {
-		DEK_LOGE("no encryption context to the target..\n");
-		rc = -EOPNOTSUPP;
-	} else {
-
-		rc = fscrypt_sdp_dump_file_key(inode);
-		if (rc) {
-			DEK_LOGE("dump_file_key: operation failed (err:%d)\n", rc);
-			rc = -EFAULT;
-		}
-	}
-	return rc;
-#else
 	return 0;
-#endif
 }
 
 /*
