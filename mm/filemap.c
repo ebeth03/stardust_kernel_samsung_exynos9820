@@ -38,10 +38,6 @@
 #include <linux/rmap.h>
 #include "internal.h"
 
-#ifdef CONFIG_FSCRYPT_SDP
-#include <linux/fscrypto_sdp_cache.h>
-#endif
-
 #ifdef CONFIG_PAGE_BOOST_RECORDING
 #include <linux/io_record.h>
 #endif
@@ -2259,18 +2255,7 @@ generic_file_read_iter(struct kiocb *iocb, struct iov_iter *iter)
 			goto out;
 	}
 
-#ifdef CONFIG_FSCRYPT_SDP
-	//Check after writeback is completed.
-	if (fscrypt_sdp_file_not_readable(iocb->ki_filp)) {
-		retval = -EIO;
-		goto out;
-	}
-#endif
-
 	retval = generic_file_buffered_read(iocb, iter, retval);
-#ifdef CONFIG_FSCRYPT_SDP
-	fscrypt_sdp_unset_file_io_ongoing(iocb->ki_filp);
-#endif
 out:
 	return retval;
 }
