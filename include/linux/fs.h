@@ -409,7 +409,7 @@ struct address_space {
 	struct list_head	private_list;	/* for use by the address_space */
 	void			*private_data;	/* ditto */
 	errseq_t		wb_err;
-#if defined(CONFIG_SDP) && !defined(CONFIG_FSCRYPT_SDP)
+#if !defined(CONFIG_FSCRYPT_SDP)
 	int userid;
 #endif
 } __attribute__((aligned(sizeof(long)))) __randomize_layout;

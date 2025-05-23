@@ -388,7 +388,6 @@ int fscrypt_sdp_set_protected(struct inode *inode, int engine_id)
 	}
 
 	fscrypt_sdp_cache_remove_inode_num(inode);
-	mapping_clear_sensitive(inode->i_mapping);
 
 out:
 	memzero_explicit(&fek, sizeof(fek));
@@ -891,12 +890,6 @@ inline int __fscrypt_get_sdp_context(struct inode *inode, struct fscrypt_info *c
 	return res;
 }
 
-static inline void __fscrypt_sdp_set_inode_sensitive(struct inode *inode)
-{
-	fscrypt_sdp_cache_add_inode_num(inode);
-	mapping_set_sensitive(inode->i_mapping);
-}
-
 inline int __fscrypt_sdp_finish_set_sensitive(struct inode *inode,
 				struct fscrypt_context *ctx, struct fscrypt_info *crypt_info,
 				struct fscrypt_key *key) {
@@ -981,11 +974,6 @@ inline int __fscrypt_sdp_finish_set_sensitive(struct inode *inode,
 			goto out;
 		}
 		DEK_LOGD("sensitive SDP_DEK_TO_SET_SENSITIVE finished!!\n");
-	}
-
-	if ((crypt_info->ci_sdp_info->sdp_flags & SDP_DEK_IS_SENSITIVE) &&
-			!(crypt_info->ci_sdp_info->sdp_flags & SDP_IS_DIRECTORY)) {
-		__fscrypt_sdp_set_inode_sensitive(inode);
 	}
 
 out:
@@ -1559,8 +1547,6 @@ inline void __fscrypt_sdp_finalize_tasks(struct inode *inode,
 	if (ci->ci_sdp_info->sdp_flags & SDP_IS_DIRECTORY)
 		return;
 
-	if (ci->ci_sdp_info->sdp_flags & SDP_DEK_IS_SENSITIVE)
-		__fscrypt_sdp_set_inode_sensitive(inode);
 
 	if (unlikely(key_len <= 0)) {
 		DEK_LOGE("finalize_tasks: invalid key size (maybe previous err:%d)\n", key_len);

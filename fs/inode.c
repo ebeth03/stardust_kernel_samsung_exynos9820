@@ -183,7 +183,7 @@ int inode_init_always(struct super_block *sb, struct inode *inode)
 	mapping_set_gfp_mask(mapping, GFP_HIGHUSER_MOVABLE);
 	mapping->private_data = NULL;
 	mapping->writeback_index = 0;
-#if defined(CONFIG_SDP) && !defined(CONFIG_FSCRYPT_SDP)
+#if !defined(CONFIG_FSCRYPT_SDP)
 	mapping->userid = 0;
 #endif
 	inode->i_private = NULL;
