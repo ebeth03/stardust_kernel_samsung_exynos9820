@@ -83,60 +83,6 @@ struct bio_post_read_ctx {
 	unsigned int enabled_steps;
 };
 
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-static inline bool f2fs_inline_encrypted(struct inode *inode,
-		struct f2fs_io_info *fio)
-{
-	if (fio && (fio->type != DATA || fio->encrypted_page))
-		return false;
-
-	return (f2fs_encrypted_file(inode) &&
-			fscrypt_inline_encrypted(inode));
-}
-
-static inline bool __bio_inline_encrypted(struct bio *bio)
-{
-	if (!bio)
-		return false;
-
-	if (bio->bi_opf & REQ_CRYPT)
-		return true;
-
-	return false;
-}
-
-static bool try_merge_bio_encrypted(struct bio *bio, u64 dun, void *ci, bool encrypted)
-{
-	if (!bio)
-		return true;
-
-	/* if both of them are not encrypted, no further check is needed */
-	if (!__bio_inline_encrypted(bio) && !encrypted)
-		return true;
-
-	if (bio->bi_cryptd != ci)
-		return false;
-
-#ifdef CONFIG_BLK_DEV_CRYPT_DUN
-	if (bio_end_dun(bio) != dun)
-		return false;
-#endif
-	return true;
-}
-
-static inline void set_fio_inline_encrypted(struct f2fs_io_info *fio, int set)
-{
-	if (!fio)
-		return;
-
-	if (set) {
-		fio->op_flags |= REQ_CRYPT;
-		return;
-	}
-
-	fio->op_flags &= ~REQ_CRYPT;
-}
-#else /* !defined(CONFIG_FS_INLINE_ENCRYPTION) */
 static inline bool f2fs_inline_encrypted(struct inode *inode,
 		struct f2fs_io_info *fio)
 {
@@ -152,7 +98,6 @@ static inline void set_fio_inline_encrypted(struct f2fs_io_info *fio, int set)
 {
 	/* DO NOTHING */
 }
-#endif
 
 static void __read_end_io(struct bio *bio)
 {

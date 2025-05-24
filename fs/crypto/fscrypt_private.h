@@ -59,9 +59,6 @@ struct fscrypt_info {
 	u8 ci_data_mode;
 	u8 ci_filename_mode;
 	u8 ci_flags;
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-	void *ci_private;	/* private data for inline encryption */
-#endif
 	struct crypto_skcipher *ci_ctfm;
 	struct crypto_cipher *ci_essiv_tfm;
 	u8 ci_master_key[FS_KEY_DESCRIPTOR_SIZE];
@@ -78,12 +75,6 @@ typedef enum {
 static inline bool fscrypt_valid_inline_enc_modes(u32 contents_mode,
 						  u32 filenames_mode)
 {
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-	if (contents_mode == FS_ENCRYPTION_MODE_PRIVATE &&
-	    filenames_mode == FS_ENCRYPTION_MODE_AES_256_CTS)
-		return true;
-#endif
-
 	return false;
 }
 
@@ -110,11 +101,6 @@ static inline bool fscrypt_valid_enc_modes(u32 contents_mode,
 
 static inline bool __fscrypt_inline_encrypted(const struct inode *inode)
 {
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-	if (inode && S_ISREG(inode->i_mode) &&
-	    IS_ENCRYPTED(inode) && inode->i_crypt_info)
-		return inode->i_crypt_info->ci_private ? true : false;
-#endif
 	return false;
 }
 

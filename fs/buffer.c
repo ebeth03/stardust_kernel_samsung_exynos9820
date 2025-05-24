@@ -3198,10 +3198,8 @@ static int submit_bh_wbc(int op, int op_flags, struct buffer_head *bh,
 	}
 	bio_set_op_attrs(bio, op, op_flags);
 
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
 	if (bio->bi_opf & REQ_CRYPT)
 		bio->bi_cryptd = bh->b_private;
-#endif
 
 #ifdef CONFIG_SUBMIT_BH_IO_ACCOUNTING
 	if (op & REQ_OP_WRITE)

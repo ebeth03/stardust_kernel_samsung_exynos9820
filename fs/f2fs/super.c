@@ -2439,9 +2439,6 @@ static const struct fscrypt_operations f2fs_cryptops = {
 	.key_prefix	= "f2fs:",
 	.get_context	= f2fs_get_context,
 	.set_context	= f2fs_set_context,
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-	.get_dun	= __fscrypt_make_dun,
-#endif
 	.dummy_context	= f2fs_dummy_context,
 	.empty_dir	= f2fs_empty_dir,
 	.max_namelen	= F2FS_NAME_LEN,

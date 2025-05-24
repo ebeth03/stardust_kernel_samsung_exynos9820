@@ -16,9 +16,6 @@
 #include <crypto/sha.h>
 #include <crypto/skcipher.h>
 #include "fscrypt_private.h"
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-#include <linux/blk-crypt.h>
-#endif
 
 static struct crypto_shash *essiv_hash_tfm;
 
@@ -80,13 +77,8 @@ invalid:
 	return ERR_PTR(-ENOKEY);
 }
 
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-#define INLINE_PREFIX_STR	"inline-"
-#define INLINE_PREFIX_LEN	(7)
-#else
 #define INLINE_PREFIX_STR	""
 #define INLINE_PREFIX_LEN	(0)
-#endif
 
 static struct fscrypt_mode {
 	const char *friendly_name;
@@ -115,14 +107,6 @@ static struct fscrypt_mode {
 		.cipher_str = "cts(cbc(aes))",
 		.keysize = 16,
 	},
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-	[FS_ENCRYPTION_MODE_PRIVATE] = {
-		.friendly_name = "AES-256-XTS/Private",
-		.cipher_str = INLINE_PREFIX_STR "xts(aes)",
-		.keysize = 64,
-		.inline_enc = true,
-	},
-#endif
 };
 
 static struct fscrypt_mode *
@@ -147,96 +131,11 @@ select_encryption_mode(const struct fscrypt_info *ci, const struct inode *inode)
 	return ERR_PTR(-EINVAL);
 }
 
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-static bool need_inline_encryption(struct inode *inode, struct fscrypt_mode *mode)
-{
-	if (!S_ISREG(inode->i_mode))
-		return false;
-
-	if (!mode->inline_enc)
-		return false;
-
-	return true;
-}
-
-static void attach_ci_private(struct fscrypt_info *crypt_info, void *private)
-{
-	crypt_info->ci_private = private;
-}
-
-static void *detach_ci_private(struct fscrypt_info *crypt_info)
-{
-	void *private = crypt_info->ci_private;
-
-	crypt_info->ci_private = NULL;
-	return private;
-}
-
-static int prepare_inline_encryption(struct super_block *sb, struct fscrypt_info *crypt_info,
-				     struct fscrypt_mode *mode, u8 *raw_key)
-{
-	int res = -EINVAL;
-	const char *cipher_str;
-	struct block_device *bdev = sb->s_bdev;
-	blk_crypt_t *bctx = NULL;
-
-	if (strlen(mode->cipher_str) <= INLINE_PREFIX_LEN)
-		return -EINVAL;
-
-	if (strncmp(mode->cipher_str, INLINE_PREFIX_STR, INLINE_PREFIX_LEN ))
-		return -EINVAL;
-
-	cipher_str = mode->cipher_str + INLINE_PREFIX_LEN;
-	bctx = blk_crypt_get_context(bdev, cipher_str);
-	if (IS_ERR(bctx)) {
-		pr_err("%s : failed to get blk_crypt context (transform: %s, err: %d)",
-				__func__, cipher_str, PTR_ERR(bctx));
-		return PTR_ERR(bctx);
-	}
-
-	res = blk_crypt_set_key(bctx, raw_key, mode->keysize);
-	if (res) {
-		pr_err("%s : failed to set key for blk_crypt"
-			"(transform: %s, err: %d)", __func__, cipher_str, res);
-		goto err;
-	}
-
-	attach_ci_private(crypt_info, bctx);
-	if (unlikely(!mode->logged_impl_name)) {
-		/*
-		 * fscrypt performance can vary greatly depending on which
-		 * crypto algorithm implementation is used.  Help people debug
-		 * performance problems by logging the ->cra_driver_name the
-		 * first time a mode is used.  Note that multiple threads can
-		 * race here, but it doesn't really matter.
-		 */
-		mode->logged_impl_name = true;
-		pr_info("fscrypt: %s using implementation \"%s\"\n",
-			mode->friendly_name, mode->cipher_str);
-	}
-	return 0;
-
-err:
-	blk_crypt_put_context(bctx);
-	return res;
-}
-static void put_inline_crypt_info(void *ci)
-{
-	if (!ci)
-		return;
-
-	blk_crypt_put_context(ci);
-}
-#endif
-
 static void put_crypt_info(struct fscrypt_info *ci)
 {
 	if (!ci)
 		return;
 
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-	put_inline_crypt_info(detach_ci_private(ci));
-#endif
 	crypto_free_skcipher(ci->ci_ctfm);
 	crypto_free_cipher(ci->ci_essiv_tfm);
 	kmem_cache_free(fscrypt_info_cachep, ci);
@@ -355,9 +254,6 @@ int fscrypt_get_encryption_info(struct inode *inode)
 	crypt_info->ci_filename_mode = ctx.filenames_encryption_mode;
 	crypt_info->ci_ctfm = NULL;
 	crypt_info->ci_essiv_tfm = NULL;
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-	crypt_info->ci_private = NULL;
-#endif
 	memcpy(crypt_info->ci_master_key, ctx.master_key_descriptor,
 				sizeof(crypt_info->ci_master_key));
 
@@ -375,15 +271,6 @@ int fscrypt_get_encryption_info(struct inode *inode)
 	raw_key = kmalloc(mode->keysize, GFP_NOFS);
 	if (!raw_key)
 		goto out;
-
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-	if (need_inline_encryption(inode, mode)) {
-		res = prepare_inline_encryption(inode->i_sb, crypt_info, mode, raw_key);
-		if (res)
-			goto out;
-		goto attach_ci;
-	}
-#endif
 
 	ctfm = crypto_alloc_skcipher(mode->cipher_str, 0, 0);
 	if (IS_ERR(ctfm)) {
@@ -422,9 +309,6 @@ int fscrypt_get_encryption_info(struct inode *inode)
 			goto out;
 		}
 	}
-#ifdef CONFIG_FS_INLINE_ENCRYPTION
-attach_ci:
-#endif
 
 	if (cmpxchg(&inode->i_crypt_info, NULL, crypt_info) == NULL)
 		crypt_info = NULL;

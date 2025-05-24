@@ -451,14 +451,6 @@ static inline void dio_bio_submit(struct dio *dio, struct dio_submit *sdio)
 	dio->refcount++;
 	spin_unlock_irqrestore(&dio->bio_lock, flags);
 
-#if defined(CONFIG_FS_INLINE_ENCRYPTION)
-	if (fscrypt_inline_encrypted(dio->inode)) {
-		fscrypt_set_bio_cryptd_dun(dio->inode, bio,
-				fscrypt_get_dun(dio->inode,
-				(sdio->logical_offset_in_bio >> PAGE_SHIFT)));
-	}
-#endif
-
 	if (dio->is_async && dio->op == REQ_OP_READ && dio->should_dirty)
 		bio_set_pages_dirty(bio);
 
