@@ -411,7 +411,7 @@ kernelsu ()
     if ! grep -rnw 'drivers/input/input.c' -e 'CONFIG_KSU' > /dev/null; then
         quotes "Patching KernelSU to Kernel Tree"
         separator
-        patch -p1 < <(curl -s "https://raw.githubusercontent.com/WildKernels/kernel_patches/refs/heads/main/next/0001-kernel-implement-susfs-v1.5.8-KernelSU-Next-v1.0.8.patch")
+        patch -p1 < <(curl -s "https://raw.githubusercontent.com/StardustMod/build/refs/heads/exynos9820/patches/KernelSU.patch")
         separator
         check "KernelSU"
     fi
@@ -440,7 +440,7 @@ kernelsu ()
         separator
         quotes "Patching SuSFS to Kernel Tree"
         separator
-        patch -p1 < <(curl -s "https://raw.githubusercontent.com/WildKernels/kernel_patches/refs/heads/main/next/0001-kernel-implement-susfs-v1.5.8-KernelSU-Next-v1.0.8.patch")
+        patch -p1 < <(curl -s "https://raw.githubusercontent.com/StardustMod/build/refs/heads/exynos9820/patches/SuSFS.patch")
         separator
         check "SuSFS"
     fi
