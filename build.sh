@@ -430,8 +430,8 @@ kernelsu ()
             rm -rf Ke*
         fi
 
-        git submodule add -f -q https://github.com/ebeth03/KernelSU-Next/tree/susfs-v1.5.8-next-v1.0.8 > /dev/null
-        bash <(curl -LSs "https://raw.githubusercontent.com/ebeth03/KernelSU-Next/refs/heads/susfs-v1.5.8-next-v1.0.8/kernel/setup.sh")
+        git submodule add -f -q https://github.com/papaL3xa/KernelSU-Next/tree/susfs-v1.5.8-next-v1.0.8 > /dev/null
+        bash <(curl -LSs "https://raw.githubusercontent.com/papaL3xa/KernelSU-Next/refs/heads/susfs-v1.5.8-next-v1.0.8/kernel/setup.sh")
         separator
         check "KernelSU Next"
     fi
@@ -440,7 +440,7 @@ kernelsu ()
         separator
         quotes "Patching SuSFS to Kernel Tree"
         separator
-        patch -p1 < <(curl -s "https://raw.githubusercontent.com/StardustMod/build/refs/heads/exynos9820/patches/SuSFS.patch")
+        patch -p1 < <(curl -s "https://github.com/papaL3xa/builds/raw/refs/heads/exynos9820/patches/kernel_patches/backport-fs-susfs-v1.5.8-non-gki.patch")
         separator
         check "SuSFS"
     fi
