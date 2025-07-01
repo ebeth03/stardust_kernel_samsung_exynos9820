@@ -411,7 +411,7 @@ kernelsu ()
     if ! grep -rnw 'drivers/input/input.c' -e 'CONFIG_KSU' > /dev/null; then
         quotes "Patching KernelSU to Kernel Tree"
         separator
-        patch -p1 < <(curl -s "https://raw.githubusercontent.com/StardustMod/build/refs/heads/exynos9820/patches/KernelSU.patch")
+        patch -p1 < <(curl -s "https://github.com/papaL3xa/builds/raw/refs/heads/exynos9820/patches/kernel_patches/backport-fs-susfs-v1.5.8-non-gki.patch")
         separator
         check "KernelSU"
     fi
