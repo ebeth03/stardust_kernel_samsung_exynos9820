@@ -40,8 +40,18 @@
 #include <linux/list_lru.h>
 #include <linux/kasan.h>
 
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+#include <linux/susfs_def.h>
+#endif
+
+
+
 #include "internal.h"
 #include "mount.h"
+
+#ifdef CONFIG_RKP_NS_PROT
+u8 ns_prot = 0;
+#endif
 
 /*
  * Usage:
@@ -81,7 +91,7 @@
  *   dentry1->d_lock
  *     dentry2->d_lock
  */
-int sysctl_vfs_cache_pressure __read_mostly = 20;
+int sysctl_vfs_cache_pressure __read_mostly = 100;
 EXPORT_SYMBOL_GPL(sysctl_vfs_cache_pressure);
 
 __cacheline_aligned_in_smp DEFINE_SEQLOCK(rename_lock);
@@ -2227,7 +2237,15 @@ seqretry:
 				continue;
 			if (dentry_cmp(dentry, str, hashlen_len(hashlen)) != 0)
 				continue;
-		}
+		
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+if (dentry->d_inode &&
+			susfs_need_to_spoof_sus_path(dentry->d_inode, dentry->d_inode->i_uid.val))
+			{
+   				continue;
+   			}
+#endif
+        }
 		*seqp = seq;
 		return dentry;
 	}
@@ -2310,6 +2328,15 @@ struct dentry *__d_lookup(const struct dentry *parent, const struct qstr *name)
 		if (dentry->d_name.hash != hash)
 			continue;
 
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+if (dentry->d_inode &&
+		susfs_need_to_spoof_sus_path(dentry->d_inode, dentry->d_inode->i_uid.val))
+		{
+
+            continue;
+        }
+#endif
+            
 		spin_lock(&dentry->d_lock);
 		if (dentry->d_parent != parent)
 			goto next;
@@ -3168,7 +3195,11 @@ restart:
 			if (mnt != parent) {
 				dentry = ACCESS_ONCE(mnt->mnt_mountpoint);
 				mnt = parent;
+#ifdef CONFIG_RKP_NS_PROT
+				vfsmnt = mnt->mnt;
+#else
 				vfsmnt = &mnt->mnt;
+#endif
 				continue;
 			}
 			if (!error)
@@ -3690,4 +3721,7 @@ void __init vfs_caches_init(void)
 	mnt_init();
 	bdev_cache_init();
 	chrdev_init();
+#ifdef CONFIG_RKP_NS_PROT
+	ns_prot = 1;
+#endif
 }
